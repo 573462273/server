@@ -1,5 +1,8 @@
 #!/bin/bash
-
+#
+# SPDX-FileCopyrightText: 2021 Nextcloud GmbH and Nextcloud contributors
+# SPDX-License-Identifier: AGPL-3.0-or-later
+#
 set -eu
 
 # bulk_upload.sh <nb-of-files> <size-of-files>
@@ -37,7 +40,7 @@ do
 		echo -en "--$BOUNDARY\r\n"
 		# echo -en "Content-ID: $file_name\r\n"
 		echo -en "X-File-Path: $file_remote_path\r\n"
-		echo -en "X-File-Mtime: $file_mtime\r\n"
+		echo -en "X-OC-Mtime: $file_mtime\r\n"
 		# echo -en "X-File-Id: $file_id\r\n"
 		echo -en "X-File-Md5: $file_hash\r\n"
 		echo -en "Content-Length: $file_size\r\n"

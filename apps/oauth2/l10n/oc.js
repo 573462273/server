@@ -5,14 +5,11 @@ OC.L10N.register(
     "Your redirect URL needs to be a full URL for example: https://yourdomain.com/path" : "Vòstra URL de redireccion deu èsser una URL complèta per exemple : https://vostredomeni.com/path",
     "OAuth 2.0" : "OAuth 2.0",
     "Allows OAuth2 compatible authentication from other web applications." : "Permet l’autentificacion compatibla OAuth2 a partir d’autras aplicacions web",
+    "Delete" : "Suprimir",
     "OAuth 2.0 clients" : "clients OAuth 2.0",
-    "Add client" : "Apondre un client",
     "Name" : "Nom",
     "Redirection URI" : "URI de redireccion",
-    "Add" : "Apondre",
-    "Client Identifier" : "Identificador client",
-    "Secret" : "Secret",
-    "Show client secret" : "Afichar lo secret del client",
-    "Delete" : "Suprimir"
+    "Add client" : "Apondre un client",
+    "Add" : "Apondre"
 },
 "nplurals=2; plural=(n > 1);");

@@ -1,58 +1,51 @@
 <!--
-	- @copyright 2021, Christopher Ng <chrng8@gmail.com>
-	-
-	- @author Christopher Ng <chrng8@gmail.com>
-	-
-	- @license GNU AGPL version 3 or any later version
-	-
-	- This program is free software: you can redistribute it and/or modify
-	- it under the terms of the GNU Affero General Public License as
-	- published by the Free Software Foundation, either version 3 of the
-	- License, or (at your option) any later version.
-	-
-	- This program is distributed in the hope that it will be useful,
-	- but WITHOUT ANY WARRANTY; without even the implied warranty of
-	- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-	- GNU Affero General Public License for more details.
-	-
-	- You should have received a copy of the GNU Affero General Public License
-	- along with this program. If not, see <http://www.gnu.org/licenses/>.
-	-
+  - SPDX-FileCopyrightText: 2021 Nextcloud GmbH and Nextcloud contributors
+  - SPDX-License-Identifier: AGPL-3.0-or-later
 -->
 
 <template>
-	<section>
-		<HeaderBar
-			:account-property="accountProperty" />
-
-		<ProfileCheckbox
-			:profile-enabled.sync="profileEnabled" />
-
+	<section class="profile-section">
 		<ProfilePreviewCard
-			:organisation="organisation"
+			:status-message="statusMessage"
 			:display-name="displayName"
-			:profile-enabled="profileEnabled"
 			:user-id="userId" />
 
-		<EditProfileAnchorLink
-			:profile-enabled="profileEnabled" />
+		<NcFormBox>
+			<NcFormBoxSwitch
+				:model-value="profileEnabled"
+				:label="t('settings', 'Nextcloud profile')"
+				:disabled="loading"
+				@update:modelValue="saveEnableProfile" />
+			<NcFormBoxButton
+				v-if="profileEnabled"
+				:label="t('settings', 'View full profile')"
+				:href="profilePageLink"
+				target="_blank">
+				<template #icon>
+					<OpenInNew :size="20" />
+				</template>
+			</NcFormBoxButton>
+		</NcFormBox>
 	</section>
 </template>
 
 <script>
+import { getCurrentUser } from '@nextcloud/auth'
+import { emit, subscribe, unsubscribe } from '@nextcloud/event-bus'
 import { loadState } from '@nextcloud/initial-state'
-import { subscribe, unsubscribe } from '@nextcloud/event-bus'
-
-import EditProfileAnchorLink from './EditProfileAnchorLink'
-import HeaderBar from '../shared/HeaderBar'
-import ProfileCheckbox from './ProfileCheckbox'
-import ProfilePreviewCard from './ProfilePreviewCard'
-
-import { ACCOUNT_PROPERTY_READABLE_ENUM } from '../../../constants/AccountPropertyConstants'
+import { generateUrl } from '@nextcloud/router'
+import NcFormBox from '@nextcloud/vue/components/NcFormBox'
+import NcFormBoxButton from '@nextcloud/vue/components/NcFormBoxButton'
+import NcFormBoxSwitch from '@nextcloud/vue/components/NcFormBoxSwitch'
+import OpenInNew from 'vue-material-design-icons/OpenInNew.vue'
+import ProfilePreviewCard from './ProfilePreviewCard.vue'
+import { ACCOUNT_PROPERTY_ENUM } from '../../../constants/AccountPropertyConstants.js'
+import { savePrimaryAccountProperty } from '../../../service/PersonalInfo/PersonalInfoService.js'
+import { handleError } from '../../../utils/handlers.ts'
 
 const {
-	organisationMap: { primaryOrganisation: { value: organisation } },
-	displayNameMap: { primaryDisplayName: { value: displayName } },
+	statusMessage,
+	displayName: { value: displayName },
 	profileEnabled,
 	userId,
 } = loadState('settings', 'personalInfoParameters', {})
@@ -61,50 +54,67 @@ export default {
 	name: 'ProfileSection',
 
 	components: {
-		EditProfileAnchorLink,
-		HeaderBar,
-		ProfileCheckbox,
+		NcFormBox,
+		NcFormBoxButton,
+		NcFormBoxSwitch,
+		OpenInNew,
 		ProfilePreviewCard,
 	},
 
 	data() {
 		return {
-			accountProperty: ACCOUNT_PROPERTY_READABLE_ENUM.PROFILE_ENABLED,
-			organisation,
+			statusMessage,
 			displayName,
 			profileEnabled,
 			userId,
+			loading: false,
 		}
+	},
+
+	computed: {
+		profilePageLink() {
+			return generateUrl('/u/{userId}', { userId: getCurrentUser().uid })
+		},
 	},
 
 	mounted() {
 		subscribe('settings:display-name:updated', this.handleDisplayNameUpdate)
-		subscribe('settings:organisation:updated', this.handleOrganisationUpdate)
 	},
 
 	beforeDestroy() {
 		unsubscribe('settings:display-name:updated', this.handleDisplayNameUpdate)
-		unsubscribe('settings:organisation:updated', this.handleOrganisationUpdate)
 	},
 
 	methods: {
-		handleDisplayNameUpdate(displayName) {
-			this.displayName = displayName
+		async saveEnableProfile(profileEnabled) {
+			this.loading = true
+			try {
+				const responseData = await savePrimaryAccountProperty(ACCOUNT_PROPERTY_ENUM.PROFILE_ENABLED, profileEnabled)
+				if (responseData.ocs?.meta?.status === 'ok') {
+					this.profileEnabled = profileEnabled
+					emit('settings:profile-enabled:updated', profileEnabled)
+				} else {
+					handleError(null, t('settings', 'Unable to update profile enabled state'))
+				}
+			} catch (e) {
+				handleError(e, t('settings', 'Unable to update profile enabled state'))
+			} finally {
+				this.loading = false
+			}
 		},
 
-		handleOrganisationUpdate(organisation) {
-			this.organisation = organisation
+		handleDisplayNameUpdate(displayName) {
+			this.displayName = displayName
 		},
 	},
 }
 </script>
 
 <style lang="scss" scoped>
-section {
-	padding: 10px 10px;
-
-	&::v-deep button:disabled {
-		cursor: default;
-	}
+.profile-section {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	padding-block: 6px;
 }
 </style>
